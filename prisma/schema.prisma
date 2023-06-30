@@ -1,0 +1,88 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String         @id @default(uuid())
+  firstName    String?
+  lastName     String?
+  email        String         @unique
+  password     String
+  googleAuth   Boolean        @default(false)
+  verified     Boolean        @default(false)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  urls         Url[]
+  refreshToken RefreshToken[]
+
+  @@map("users")
+}
+
+model Url {
+  id           String        @id @default(uuid())
+  longUrl      String
+  shortUrl     String        @unique
+  title        String?
+  customDomain CustomDomain?
+  clicks       Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  status       Boolean       @default(true)
+  userId       String
+  user         User          @relation(fields: [userId], references: [id])
+  clickData    Click[]
+  QrCode       QrCode?
+
+  @@map("urls")
+}
+
+model CustomDomain {
+  id        String   @id @default(uuid())
+  domain    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  url   Url    @relation(fields: [urlId], references: [id])
+  urlId String @unique
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Click {
+  id        String   @id @default(uuid())
+  urlId     String
+  device    String?
+  os        String?
+  browser   String?
+  ipAddress String?
+  timestamp DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  url       Url      @relation(fields: [urlId], references: [id])
+
+  @@map("clicks")
+}
+
+model QrCode {
+  id    String @id @default(uuid())
+  urlId String @unique
+  url   Url    @relation(fields: [urlId], references: [id])
+  image Bytes
+}
